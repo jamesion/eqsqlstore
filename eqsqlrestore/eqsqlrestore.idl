@@ -1,0 +1,29 @@
+// eqsqlrestore.idl : eqsqlrestore.exe 的类型库源
+
+// 此文件将由 MIDL 编译器处理以产生
+// 类型库(eqsqlrestore.tlb)。
+
+[ uuid(1989AE75-22F0-4F51-844D-E17542CBFCAB), version(1.0) ]
+library eqsqlrestore
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	//  CeqsqlrestoreDoc 的主调度接口
+	
+	[ uuid(F85E9902-0D2E-4863-BBB5-6D49F8F6EA6D) ]
+	dispinterface Ieqsqlrestore
+	{
+		properties:
+			
+		methods:
+	};
+
+	//  CeqsqlrestoreDoc 的类信息
+	
+	[ uuid(9B7DD6F1-6C66-4861-9E73-200B6A3EC4F9) ]
+	coclass eqsqlrestore
+	{
+		[default] dispinterface Ieqsqlrestore;
+	};
+};
