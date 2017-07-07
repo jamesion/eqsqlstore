@@ -69,6 +69,18 @@
     <ClInclude Include="TitleTip.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="eqseachmysql.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="eqemu_logsys.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Ceqmyslq.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="eqsqlrestore.cpp">
@@ -108,6 +120,15 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="TitleTip.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="eqseachmysql.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="eqemu_logsys.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Ceqmyslq.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

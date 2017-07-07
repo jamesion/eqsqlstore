@@ -78,7 +78,9 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files\MySQL\MySQL Server 5.7\include;</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;C:\Program Files\MySQL\MySQL Server 5.7\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -118,10 +120,17 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
       <RegisterOutput>true</RegisterOutput>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;C:\Program Files\MySQL\MySQL Server 5.7\lib\libmysql.lib;ws2_32.lib;psapi.lib;iphlpapi.lib;userenv.lib;</AdditionalDependencies>
+      <EntryPointSymbol>WinMainCRTStartup</EntryPointSymbol>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -199,7 +208,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CellRange.h" />
+    <ClInclude Include="Ceqmyslq.h" />
     <ClInclude Include="DlgProxy.h" />
+    <ClInclude Include="eqemu_logsys.h" />
+    <ClInclude Include="eqseachmysql.h" />
     <ClInclude Include="eqsqlrestore.h" />
     <ClInclude Include="eqsqlrestoreDlg.h" />
     <ClInclude Include="GridCell.h" />
@@ -215,9 +227,13 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TitleTip.h" />
+    <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Ceqmyslq.cpp" />
     <ClCompile Include="DlgProxy.cpp" />
+    <ClCompile Include="eqemu_logsys.cpp" />
+    <ClCompile Include="eqseachmysql.cpp" />
     <ClCompile Include="eqsqlrestore.cpp" />
     <ClCompile Include="eqsqlrestoreDlg.cpp" />
     <ClCompile Include="GridCell.cpp" />

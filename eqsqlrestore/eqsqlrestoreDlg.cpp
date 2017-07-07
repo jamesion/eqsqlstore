@@ -7,6 +7,8 @@
 #include "eqsqlrestoreDlg.h"
 #include "DlgProxy.h"
 #include "afxdialogex.h"
+#include "eqemu_logsys.h"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -56,6 +58,7 @@ CeqsqlrestoreDlg::CeqsqlrestoreDlg(CWnd* pParent /*=NULL*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_pAutoProxy = NULL;
+
 }
 
 CeqsqlrestoreDlg::~CeqsqlrestoreDlg()
@@ -68,6 +71,7 @@ CeqsqlrestoreDlg::~CeqsqlrestoreDlg()
 
 	if (m_MyGridCtrl != NULL)
 		delete m_MyGridCtrl;
+	
 }
 
 void CeqsqlrestoreDlg::DoDataExchange(CDataExchange* pDX)
@@ -116,7 +120,7 @@ BOOL CeqsqlrestoreDlg::OnInitDialog()
 	//  执行此操作
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
-	buttonselete();
+	//buttonselete();
 
 
 	if (m_MyGridCtrl != NULL)
@@ -129,7 +133,22 @@ BOOL CeqsqlrestoreDlg::OnInitDialog()
 
 	m_MyGridCtrl->Create(this, IDC_GRID);
 
+
+	CString list;
+//	list.Append("this's one para|this's two para|this's three para|");
+//	m_MyGridCtrl->SetComboList(LIST_OVERKEY, , false);
+
 	m_MyGridCtrl->upcell();
+
+	if (!LogSys.setmainDlg(this))
+		return-1;
+
+	LogSys.LoadLogSettingsDefaults();
+	myeqsql = new Ceqmyslq();
+
+	SethostInfo();
+
+	Setitemreadonly(false);
 
 	// TODO: 在此添加额外的初始化代码
 
@@ -227,11 +246,34 @@ BOOL CeqsqlrestoreDlg::CanExit()
 
 void CeqsqlrestoreDlg::OnBnClickedConnet()
 {
-	// TODO: 在此添加控件通知处理程序代码
+	if (!conneted)
+	{
+		if (!Gethostinfo())
+			return;
+		if (!myeqsql->mysql_connect(deshost, schost))
+			return;
+		string sql;
+		sql.append("select table_name from information_schema.tables where table_schema='jameeq' and table_type='base table'");
+		myeqsql->runSQLCommand(sql.c_str());
+		m_MyGridCtrl->SetComboList(LIST_MAINSHEET, myeqsql->getResult(), false);
+		Setitemreadonly(TRUE);
+		Log(Logs::General, Logs::Normal, "sql：%s", sql.c_str());
+		SetDlgItemTextA(IDC_CONNET, "断开");
+		conneted = true;
+		
+	}
+	else 
+	{
+		myeqsql->Close();
+		SetDlgItemTextA(IDC_CONNET, "连接");
+		Setitemreadonly(false);
+		conneted = false;
+	}
+	return ;
 }
 
 
-void CeqsqlrestoreDlg::buttonselete()
+/*void CeqsqlrestoreDlg::buttonselete()
 {
 	CButton* btn = (CButton*)GetDlgItem(IDC_CONNET);
 
@@ -240,17 +282,161 @@ void CeqsqlrestoreDlg::buttonselete()
 
 	
 }
-
+*/
 
 void CeqsqlrestoreDlg::OnBnClickedAdd()
 {
 	m_MyGridCtrl->AddRowCount();
-	// TODO: 在此添加控件通知处理程序代码
+
 }
 
 
 void CeqsqlrestoreDlg::OnBnClickedMud()
 {
 	m_MyGridCtrl->MudRowCount();
-	// TODO: 在此添加控件通知处理程序代码
+	
+}
+
+
+// 获取服务器信息
+bool CeqsqlrestoreDlg::Gethostinfo()
+{
+	bool pas=true;
+	//获取目标服务器
+	GetDlgItemTextA(IDC_DESHOST, deshost.hostip);
+	if (deshost.hostip=="0.0.0.0")
+	{
+		Log(Logs::Error, Logs::MysqlErro, "请正确输入目标Mysql服务器IP地址！");
+		//return false;
+		pas = false;
+	}
+	GetDlgItemTextA(IDC_DESUSER, deshost.username);
+	if (deshost.username== "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器用户名！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_DESPASSWD, deshost.pwd);
+	if (deshost.pwd == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器密码！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_DESSTORE, deshost.store);
+	if (deshost.store == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器库名！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_DESPORT, deshost.port);
+	if (deshost.port == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器端口！");
+		//return false;
+		pas = false;
+
+	}
+
+
+	//获取源服务器
+
+	GetDlgItemTextA(IDC_SCHOST, schost.hostip);
+	if (schost.hostip == "0.0.0.0")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器IP地址！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_SCUSER, schost.username);
+	if (schost.username == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器用户名！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_SCPASSWD, schost.pwd);
+	if (schost.pwd == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器密码！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_SCRESTORE, schost.store);
+	if (schost.store == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器库名！");
+		//return false;
+		pas = false;
+
+	}
+	GetDlgItemTextA(IDC_DESPORT, schost.port);
+	if (schost.port == "")
+	{
+		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器端口！");
+		//return false;
+		pas = false;
+
+	}
+	
+	if (!pas)
+		return false;
+	
+		return true;
+}
+
+
+bool CeqsqlrestoreDlg::SethostInfo()
+{
+	SetDlgItemTextA(IDC_DESHOST, "127.0.0.1");
+	SetDlgItemTextA(IDC_DESUSER, "root");
+	SetDlgItemTextA(IDC_DESPASSWD, "tylz");
+	SetDlgItemTextA(IDC_DESSTORE, "jameeq");
+	SetDlgItemTextA(IDC_DESPORT, "3306");
+
+	SetDlgItemTextA(IDC_SCHOST, "127.0.0.1");
+	SetDlgItemTextA(IDC_SCUSER, "root");
+	SetDlgItemTextA(IDC_SCPASSWD, "tylz");
+	SetDlgItemTextA(IDC_SCRESTORE, "jameeq");
+	SetDlgItemTextA(IDC_SCPORT, "3306");
+
+
+
+	return false;
+}
+
+
+
+void CeqsqlrestoreDlg::Setitemreadonly(bool b_Read)
+{
+
+		Sethostinforeadonly(b_Read);
+		m_MyGridCtrl->Setreadonly(!b_Read);
+	
+
+}
+
+
+void CeqsqlrestoreDlg::Sethostinforeadonly(bool b_Read)
+{
+	((CEdit*)GetDlgItem(IDC_DESHOST))->EnableWindow(!b_Read);
+	((CEdit*)GetDlgItem(IDC_DESUSER))->SetReadOnly(b_Read);
+	((CEdit*)GetDlgItem(IDC_DESPASSWD))->SetReadOnly(b_Read);
+	((CEdit*)GetDlgItem(IDC_DESSTORE))->SetReadOnly(b_Read);
+	((CEdit*)GetDlgItem(IDC_DESPORT))->SetReadOnly(b_Read);
+
+	((CEdit*)GetDlgItem(IDC_SCHOST))->EnableWindow(!b_Read);
+	((CEdit*)GetDlgItem(IDC_SCUSER))->SetReadOnly(b_Read);
+	((CEdit*)GetDlgItem(IDC_SCPASSWD))->SetReadOnly(b_Read);
+	((CEdit*)GetDlgItem(IDC_SCRESTORE))->SetReadOnly(b_Read);
+	((CEdit*)GetDlgItem(IDC_SCPORT))->SetReadOnly(b_Read);
+
 }

@@ -80,8 +80,9 @@ bool CMyGridCtrl::upcell()
 	m_MxCol = GetColumnCount();
 	this->SetRowCount(m_MxRow);
 	this->SetColumnCount(m_MxCol);
-	
+	this->gridreadonly();
 	for (int row = 0; row < this->GetRowCount(); row++)
+	{
 		for (int col = 0; col < GetColumnCount(); col++)
 		{
 			GV_ITEM Item;
@@ -99,10 +100,18 @@ bool CMyGridCtrl::upcell()
 				this->SetItem(&Item);
 			}
 			
-
+		}
+		if (row > 0)
+		{
+			/*SetCellCombo(row, 1, mainsheet);
+			SetCellCombo(row, 2, keycol);
+			SetCellCombo(row, 3, overkey);*/
+			SetItemState(row, 4, GVIS_READONLY);
 		}
 
-	
+	}
+
+
 
 	//设置偶行偶列底色
 	SetRowColor(m_MxRow, m_MxCol, RGB(255, 250, 250));
@@ -117,20 +126,14 @@ bool CMyGridCtrl::upcell()
 	for (int i = 1; i < m_MxCol; i++)
 		this->SetColumnWidth(i, (rectgrid.Width() - fixedcolwidth) / (m_MxCol - 1));
 
-	//测试控件宽度
-	/*
-	CString s;
-	s.Format("%d", rectgrid.Width());
-	this->SetItemText(1, 2, s);
-	s.Format("%d", rectgrid.Width() / m_MxCol);
-	this->SetItemText(1, 3, s);
-	*/
 
 
 	Refresh();
 
 	return true;
 }
+
+
 
 void CMyGridCtrl::SetRowColor(int nMxRow,int nMxCol, COLORREF clr)
 {
@@ -190,6 +193,8 @@ void CMyGridCtrl::SetCellCheck(int nRow, int nCol, bool isCheck)
 
 int CMyGridCtrl::AddRowCount()
 {
+	if (readonly)
+		return FALSE;
 	//获取选中元素
 	CCellRange Selection = this->GetSelectedCellRange();
 
@@ -216,12 +221,12 @@ int CMyGridCtrl::AddRowCount()
 	SetCellCombo(nRow, 2, keycol);
 	SetCellCombo(nRow, 3, overkey);
 
-	SetItemState(nRow, 4, GVIS_READONLY);
+	//SetItemState(nRow, 4, GVIS_READONLY);
 
 //刷新表格
 	upcell();
 
-	return 0;
+	return TRUE;
 }
 
 //删除选中行
@@ -246,3 +251,100 @@ int CMyGridCtrl::MudRowCount()
 	return 0;
 
 }
+
+
+bool CMyGridCtrl::SetComboList(int nListID, std::vector < std::vector < std::string > > list,BOOL add)
+{
+	/*CStringArray backlist;
+
+	for (int i = 0; i <= ; i++)
+	{
+		backlist.Add(list[i]);
+	}*/
+
+
+
+	switch (nListID)
+	{
+
+	case LIST_MAINSHEET:
+		if (!add)
+		{
+			mainsheet.RemoveAll();
+			mainsheet.Add(NULL);
+
+		}
+
+		for (int i = 0; i < list.size(); ++i)
+			mainsheet.Add(list[i][0].c_str());
+
+		return TRUE;
+		break;
+
+	case LIST_KEYCOL:
+		if (!add)
+		{
+			keycol.RemoveAll();
+			keycol.Add(NULL);
+
+		}
+
+		for (int i = 0; i < list.size(); ++i)
+			keycol.Add(list[i][0].c_str());
+
+		return TRUE;
+		break;
+	case LIST_OVERKEY:
+		if (!add)
+		{
+			overkey.RemoveAll();
+			overkey.Add(NULL);
+
+		}
+
+		for (int i = 0; i < list.size(); ++i)
+			overkey.Add(list[i][0].c_str());
+
+		return TRUE;
+		break;
+	default:
+		break;
+	}
+	
+	return FALSE;
+}
+
+
+
+void CMyGridCtrl::gridreadonly()
+{
+
+//		readonly = readoff;
+		if (readonly)
+		{
+			for (int r = 1; r < m_MxRow; r++)
+			{
+				for (int c = 1; c < m_MxCol; c++)
+				{
+					this->SetItemState(r, c, GVIS_READONLY);
+				}
+			}
+		}
+		
+		else
+		{
+
+			for (int r = 1; r < m_MxRow; r++)
+			{
+				for (int c = 1; c < m_MxCol; c++)
+				{
+					this->SetItemState(r, c, !GVIS_READONLY);
+				}
+			}
+		}
+		
+}
+
+
+
+

@@ -10,7 +10,7 @@
 #define new DEBUG_NEW
 #endif
 
-
+EQEmuLogSys LogSys;
 // CeqsqlrestoreApp
 
 BEGIN_MESSAGE_MAP(CeqsqlrestoreApp, CWinApp)

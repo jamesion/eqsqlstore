@@ -24,13 +24,20 @@
 #define IDC_SCPASSWD                    1017
 #define IDC_SCRESTORE                   1018
 #define IDC_IPADDRESS2                  1030
+#define IDC_DESHOST                     1030
 #define IDC_IPADDRESS3                  1031
+#define IDC_SCHOST                      1031
 #define IDC_CONNET                      1032
 #define IDC_COMMAND3                    1032
 #define IDC_LOG                         1036
 #define IDC_ADD                         1037
 #define IDC_BUTTON2                     1038
 #define IDC_MUD                         1038
+#define IDC_DESPORT                     1039
+#define IDC_EDIT2                       1040
+#define IDC_SCPORT                      1040
+#define IDC_DESPORTVAL                  1041
+#define IDC_SCPORTVAL                   1042
 
 // Next default values for new objects
 // 
@@ -38,7 +45,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        133
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1038
+#define _APS_NEXT_CONTROL_VALUE         1043
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

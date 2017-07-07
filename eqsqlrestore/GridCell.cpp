@@ -232,10 +232,10 @@ CGridDefaultCell::CGridDefaultCell()
     OSVERSIONINFOEX osvi;
     ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    if( !GetVersionEx((OSVERSIONINFO *) &osvi))
+    if( !GetVersionExA((OSVERSIONINFO *) &osvi))
     {
     	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);	
-        GetVersionEx ((OSVERSIONINFO *)&osvi);
+        GetVersionExA ((OSVERSIONINFO *)&osvi);
     }
     
     if (osvi.dwMajorVersion > 5)
