@@ -30,12 +30,12 @@
 #include "Resource.h"
 //#include "eqsqlrestoreDlg.h"
 
-
+#pragma once
 namespace Logs {
 	enum DebugLevel {
-		General = 1,	/* 1 - Low-Level general debugging, useful info on single line */
-		Wranging,		/* 2 - Informational based, used in functions, when particular things load */
-		Error			/* 3 - Use this for extreme detail in logging, usually in extreme debugging in the stack or interprocess communication */
+		General = 1,	
+		Wranging,		
+		Error			
 	};
 
 	/*
@@ -45,18 +45,20 @@ namespace Logs {
 
 enum LogCategory {
 	None = 0,
-	MysqlErro,
 	Normal,
 	Setting,
+	Files,
+	MysqlErro,
 	MaxCategoryID	/* Don't Remove this*/
 };
 
 /* If you add to this, make sure you update LogCategory */
 static const char* LogCategoryName[LogCategory::MaxCategoryID] = {
 	"",
-	"MysqlErro",
 	"Normal",
-	"Setting"	
+	"Setting",
+	"Files",
+	"MysqlErro",	
 };
 }
 
@@ -133,7 +135,7 @@ public:
 	const std::string StringFormat(const char* format, ...);
 	const std::string vStringFormat(const char* format, va_list args);
 	BOOL setmainDlg(CDialog* mdlg);
-	CEdit* logbox;
+
 
 private:
 	std::function<void(uint16 log_category, const std::string&)> on_log_gmsay_hook; /* Callback pointer to zone process for hooking logs to zone using GMSay */
@@ -146,6 +148,7 @@ private:
 	void ProcessGMSay(uint16 debug_level, uint16 log_category, const std::string &message); /* ProcessGMSay called via Log */
 	void ProcessLogWrite(uint16 debug_level, uint16 log_category, const std::string &message); /* ProcessLogWrite called via Log */
 	CDialog *maindlg;
+	CEdit* logbox;
 
 };
 

@@ -29,6 +29,8 @@
 #include <iostream>
 #include <windows.h>
 
+#pragma once
+
 std::ofstream process_log;
 
 /* Linux ANSI console color defines */
@@ -69,7 +71,6 @@ EQEmuLogSys::EQEmuLogSys()
 	bool file_logs_enabled = false;
 	int log_platform = 0;
 	
-	
 }
 
 EQEmuLogSys::~EQEmuLogSys()
@@ -84,18 +85,23 @@ void EQEmuLogSys::LoadLogSettingsDefaults()
 	log_settings[Logs::MysqlErro].log_to_console = Logs::Error;
 	log_settings[Logs::Normal].log_to_console = Logs::Error;
 	log_settings[Logs::Setting].log_to_console = Logs::Error;
+	log_settings[Logs::Files].log_to_console = Logs::Error;
 
 	log_settings[Logs::MysqlErro].log_to_file = Logs::Error;
 	log_settings[Logs::Normal].log_to_file = Logs::General;
-	log_settings[Logs::Setting].log_to_file = Logs::Wranging;
+	log_settings[Logs::Setting].log_to_file = Logs::General;
+	log_settings[Logs::Files].log_to_file = Logs::Error;
 
 
 	log_settings[Logs::MysqlErro].is_category_enabled = 1;
 	log_settings[Logs::Normal].is_category_enabled = 1;
 	log_settings[Logs::Setting].is_category_enabled = 1;
 
+	logbox = (CEdit*)maindlg->GetDlgItem(IDC_LOG);
+	logbox->SetLimitText(1000000);
 
-	platform_file_name = "eqsql";
+
+	platform_file_name = "eqrestore";
 
 }
 
@@ -218,12 +224,11 @@ const std::string EQEmuLogSys::vStringFormat(const char * format, va_list args)
 
 void EQEmuLogSys::ProcessConsoleMessage(uint16 debug_level, uint16 log_category, const std::string &message)
 {
-		logbox = (CEdit*)maindlg->GetDlgItem(IDC_LOG);
-		uint16 color= GetWindowsConsoleColorFromCategory(log_category);
+	uint16 color= GetWindowsConsoleColorFromCategory(log_category);
 
-		int nLength = (int)logbox->SendMessage(WM_GETTEXTLENGTH);
-		logbox->SetSel(nLength, nLength);
-		logbox->ReplaceSel(message.c_str());
+	int nLength = (int)logbox->SendMessage(WM_GETTEXTLENGTH);
+	logbox->SetSel(nLength, nLength);
+	logbox->ReplaceSel(message.c_str());
 }
 
 void EQEmuLogSys::Out(Logs::DebugLevel debug_level, uint16 log_category, std::string message, ...)
@@ -247,7 +252,7 @@ void EQEmuLogSys::Out(Logs::DebugLevel debug_level, uint16 log_category, std::st
 	const bool nothing_to_log = !log_to_dalog && !log_to_file && !log_to_gmsay;
 	if (nothing_to_log)
 		return;
-	message += "\r\n";
+	message += "\n";
 	va_list args;
 	va_start(args, message);
 	std::string output_message = vStringFormat(message.c_str(), args);

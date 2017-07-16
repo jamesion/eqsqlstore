@@ -34,7 +34,7 @@ private:
 
 
 public:
-	bool runSQLCommand(string sql);
+	bool runSQLCommand(CString sql);
 	unsigned int insert(std::string sql);
 	vector< vector<string> > getResult();
 	void destroyConnection();

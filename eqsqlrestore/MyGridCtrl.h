@@ -1,14 +1,18 @@
-#pragma once
+
 #include "GridCtrl.h"
 #include "Resource.h"
 #include <vector>
+#include <fstream>
+#include "types.h"
+#include "eqemu_logsys.h"
+
 //#include "eqcharrestoreDlg.h"
 
-#define LIST_MAINSHEET 0
-#define LIST_KEYCOL	   1
-#define LIST_OVERKEY   2
+#define LIST_MAINSHEET 1
+#define LIST_KEYCOL	   2
+#define LIST_OVERKEY   3
 
-
+#pragma once
 #pragma warning(disable:4996)
 class CMyGridCtrl :
 	public CGridCtrl
@@ -42,13 +46,34 @@ protected:
 	int m_MxRow, m_MxCol;
 	CStringArray mainsheet, keycol, overkey;
 	bool readonly = true;
+
+	//设置规则表只读或解锁只读
 	void gridreadonly();
 
 
 
 public:
 
+	//设置规则表只读标记true为只读，false解锁只读
 	void Setreadonly(bool read) { readonly = read; upcell(); };
 
+	//读取规则表只读标记
 	bool Getgridreadonliy() {return readonly;};
+
+	//设置单元格为下拉列表样式
+	void SetCellCombo(int nRow, int nCol);
+
+	//存储规则表为磁盘文件
+	void RuleSave(hostinfo deshost, hostinfo schost);
+
+	//获取规则表一组规则,并返回下组规则主表行数,无规则返回0
+	int ReadRuleGroup(int nRow, std::string* outrulemessage);
+
+	//较验规则完整性
+	bool CheckRule();
+
+	std::fstream rulefs;
+private:
+	std::string CellText;
+
 };

@@ -2,6 +2,7 @@
 // eqsqlrestoreDlg.cpp : 实现文件
 //
 
+
 #include "stdafx.h"
 #include "eqsqlrestore.h"
 #include "eqsqlrestoreDlg.h"
@@ -9,10 +10,12 @@
 #include "afxdialogex.h"
 #include "eqemu_logsys.h"
 
+#pragma once
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
 
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
@@ -87,6 +90,9 @@ BEGIN_MESSAGE_MAP(CeqsqlrestoreDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CONNET, &CeqsqlrestoreDlg::OnBnClickedConnet)
 	ON_BN_CLICKED(IDC_ADD, &CeqsqlrestoreDlg::OnBnClickedAdd)
 	ON_BN_CLICKED(IDC_MUD, &CeqsqlrestoreDlg::OnBnClickedMud)
+	ON_NOTIFY(GVN_BEGINLABELEDIT,IDC_GRID,&CeqsqlrestoreDlg::OnGridStartEdit)
+	ON_NOTIFY(GVN_ENDLABELEDIT, IDC_GRID, &CeqsqlrestoreDlg::OnGridEndEdit)
+	ON_BN_CLICKED(IDC_SRULE, &CeqsqlrestoreDlg::OnBnClickedSrule)
 END_MESSAGE_MAP()
 
 
@@ -150,6 +156,18 @@ BOOL CeqsqlrestoreDlg::OnInitDialog()
 
 	Setitemreadonly(false);
 
+/*
+	overkey.push_back("EMU服务器ID");
+	overlist.push_back(overkey);
+	vector<string>().swap(overkey);
+	overkey.push_back("本地服务器ID");
+	overlist.push_back(overkey);
+	vector<string>().swap(overkey);
+	overkey.push_back("角色ID");
+	overlist.push_back(overkey);
+	vector<string>().swap(overkey);
+
+	*/
 	// TODO: 在此添加额外的初始化代码
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -252,12 +270,12 @@ void CeqsqlrestoreDlg::OnBnClickedConnet()
 			return;
 		if (!myeqsql->mysql_connect(deshost, schost))
 			return;
-		string sql;
-		sql.append("select table_name from information_schema.tables where table_schema='jameeq' and table_type='base table'");
-		myeqsql->runSQLCommand(sql.c_str());
+
+		sql.Format("select table_name from information_schema.tables where table_schema='jameeq' and table_type='base table'");
+		myeqsql->runSQLCommand(sql);
 		m_MyGridCtrl->SetComboList(LIST_MAINSHEET, myeqsql->getResult(), false);
 		Setitemreadonly(TRUE);
-		Log(Logs::General, Logs::Normal, "sql：%s", sql.c_str());
+		//Log(Logs::General, Logs::Normal, "sql：%s", sql);
 		SetDlgItemTextA(IDC_CONNET, "断开");
 		conneted = true;
 		
@@ -302,90 +320,120 @@ void CeqsqlrestoreDlg::OnBnClickedMud()
 bool CeqsqlrestoreDlg::Gethostinfo()
 {
 	bool pas=true;
+	CString val;
 	//获取目标服务器
-	GetDlgItemTextA(IDC_DESHOST, deshost.hostip);
-	if (deshost.hostip=="0.0.0.0")
+	GetDlgItemTextA(IDC_DESHOST,val);
+	if (val =="0.0.0.0")
 	{
 		Log(Logs::Error, Logs::MysqlErro, "请正确输入目标Mysql服务器IP地址！");
 		//return false;
 		pas = false;
 	}
-	GetDlgItemTextA(IDC_DESUSER, deshost.username);
-	if (deshost.username== "")
+	strcpy(deshost.hostip, val);
+	val.Empty();
+
+	GetDlgItemTextA(IDC_DESUSER, val);
+	if (val== "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器用户名！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_DESPASSWD, deshost.pwd);
-	if (deshost.pwd == "")
+	strcpy(deshost.username, val);
+	val.Empty();
+
+	GetDlgItemTextA(IDC_DESPASSWD, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器密码！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_DESSTORE, deshost.store);
-	if (deshost.store == "")
+	strcpy(deshost.pwd, val);
+	val.Empty();
+
+	GetDlgItemTextA(IDC_DESSTORE, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器库名！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_DESPORT, deshost.port);
-	if (deshost.port == "")
+	strcpy(deshost.store, val);
+	val.Empty();
+
+	GetDlgItemTextA(IDC_DESPORT, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器端口！");
 		//return false;
 		pas = false;
 
 	}
-
+	strcpy(deshost.port, val);
+	val.Empty();
 
 	//获取源服务器
 
-	GetDlgItemTextA(IDC_SCHOST, schost.hostip);
-	if (schost.hostip == "0.0.0.0")
+	GetDlgItemTextA(IDC_SCHOST, val);
+	if (val == "0.0.0.0")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器IP地址！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_SCUSER, schost.username);
-	if (schost.username == "")
+	strcpy(schost.hostip, val);
+	val.Empty();
+
+	GetDlgItemTextA(IDC_SCUSER, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器用户名！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_SCPASSWD, schost.pwd);
-	if (schost.pwd == "")
+	strcpy(schost.username, val);
+	val.Empty();
+
+	GetDlgItemTextA(IDC_SCPASSWD, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器密码！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_SCRESTORE, schost.store);
-	if (schost.store == "")
+	strcpy(schost.pwd, val);
+	val.Empty();
+
+
+	GetDlgItemTextA(IDC_SCRESTORE, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器库名！");
 		//return false;
 		pas = false;
 
 	}
-	GetDlgItemTextA(IDC_DESPORT, schost.port);
-	if (schost.port == "")
+	strcpy(schost.store, val);
+	val.Empty();
+
+
+	GetDlgItemTextA(IDC_DESPORT, val);
+	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入源Mysql服务器端口！");
 		//return false;
 		pas = false;
 
 	}
+	strcpy(schost.port, val);
+	val.Empty();
 	
 	if (!pas)
 		return false;
@@ -425,6 +473,7 @@ void CeqsqlrestoreDlg::Setitemreadonly(bool b_Read)
 }
 
 
+
 void CeqsqlrestoreDlg::Sethostinforeadonly(bool b_Read)
 {
 	((CEdit*)GetDlgItem(IDC_DESHOST))->EnableWindow(!b_Read);
@@ -440,3 +489,169 @@ void CeqsqlrestoreDlg::Sethostinforeadonly(bool b_Read)
 	((CEdit*)GetDlgItem(IDC_SCPORT))->SetReadOnly(b_Read);
 
 }
+void CeqsqlrestoreDlg::OnGridStartEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
+{
+	if (map)
+	{
+		map = false;
+
+		NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
+		CString s_mainsheet, s_overkey;
+
+		//CString sqlcom;
+		int irow = pItem->iRow;
+		m_Cellstartstring.IsEmpty();
+		m_Cellstartstring = m_MyGridCtrl->GetItemText(pItem->iRow, pItem->iColumn);
+
+		//Log(Logs::General, Logs::Normal, "Start Edit on row %d, col %d,startstring:%s", pItem->iRow, pItem->iColumn, m_Cellstartstring);
+
+		if (pItem->iColumn == LIST_KEYCOL)
+		{
+			while (s_mainsheet = m_MyGridCtrl->GetItemText(irow, LIST_MAINSHEET))
+			{
+
+				if (!s_mainsheet.IsEmpty())
+				{
+					sql.Format("select column_name from information_schema.columns where table_schema = 'jameeq' and table_name = '%s'", s_mainsheet);
+					myeqsql->runSQLCommand(sql);
+					//Log(Logs::General, Logs::Normal, "SQL指令：%s", sql);
+					m_MyGridCtrl->SetComboList(LIST_KEYCOL, myeqsql->getResult(), false);
+					m_MyGridCtrl->SetCellCombo(pItem->iRow, LIST_KEYCOL);
+					break;
+				}
+				--irow;
+				if (irow <= 0)
+				{
+					Log(Logs::Wranging, Logs::Setting, "请先设置主表！");
+					break;
+				}
+			}
+		}
+		if (pItem->iColumn == LIST_OVERKEY)
+		{
+			s_overkey = m_MyGridCtrl->GetItemText(pItem->iRow, LIST_KEYCOL);
+
+
+			if (!s_overkey.IsEmpty())
+			{
+				vector<vector<string> >().swap(overlist);
+				overkey.push_back("EMU服务器ID");
+				overlist.push_back(overkey);
+				vector<string>().swap(overkey);
+				overkey.push_back("本地服务器ID");
+				overlist.push_back(overkey);
+				vector<string>().swap(overkey);
+				overkey.push_back("角色ID");
+				overlist.push_back(overkey);
+				vector<string>().swap(overkey);
+				m_MyGridCtrl->SetComboList(LIST_OVERKEY, overlist, false);
+				m_MyGridCtrl->SetCellCombo(pItem->iRow, LIST_OVERKEY);
+				map = true;
+				return;
+			}
+			else
+			{				
+				vector<vector<string> >().swap(overlist);
+
+				m_MyGridCtrl->SetComboList(LIST_OVERKEY, overlist, false);
+				m_MyGridCtrl->SetCellCombo(pItem->iRow, LIST_OVERKEY);
+				Log(Logs::Wranging, Logs::Setting, "未设置需替换字段！");
+				map = true;
+				return;
+
+			}
+		}
+	map = true;
+	}
+}
+
+
+void CeqsqlrestoreDlg::OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
+{
+	if (map)
+	{
+		map = false;
+
+		NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
+
+		//Log(Logs::General, Logs::Setting, "m_Cellstartstring:%s", m_Cellstartstring);
+
+		if (pItem->iColumn == LIST_OVERKEY)
+		{
+			map = true;
+			return;
+		}
+		if (m_Cellstartstring == m_MyGridCtrl->GetItemText(pItem->iRow, pItem->iColumn))
+		{
+//			Log(Logs::General, Logs::Setting, "m_Cellstartstring:%s", m_Cellstartstring);
+			map = true;
+			return;
+		}
+
+		CCellRange Selection;
+		int irow = pItem->iRow;
+		int maxrow = m_MyGridCtrl->GetRowCount() - 1;
+		if (maxrow > pItem->iRow)
+		{
+			irow = pItem->iRow+1;
+
+			while (true)
+			{		
+				if (irow > maxrow)
+				{
+					irow = maxrow;
+					break;
+				}
+
+				if (irow <= maxrow)
+				{
+					if (m_MyGridCtrl->GetItemText(irow, pItem->iColumn) != "")
+					{
+						irow -= 1;
+						break;
+					}
+
+				//	if(irow<maxrow)
+					irow++;
+				}
+
+
+
+			}
+		}
+		//	irow = irow - 1;
+		if (pItem->iColumn == LIST_MAINSHEET)
+		{
+			Selection.SetMinRow(pItem->iRow);
+			Selection.SetMinCol(LIST_KEYCOL);
+			Selection.SetMaxRow(irow);
+			Selection.SetMaxCol(LIST_OVERKEY);
+			//Log(Logs::Wranging, Logs::Setting, "rowcount:%d,irow:%d", m_MyGridCtrl->GetRowCount(), irow);
+			m_MyGridCtrl->ClearCells(Selection);
+
+			//Log(Logs::General, Logs::Normal, "End Edit on row %d, col %d\n", pItem->iRow, pItem->iColumn);
+		}
+
+		if (pItem->iColumn == LIST_KEYCOL)
+		{
+			Selection.SetMinRow(pItem->iRow);
+			Selection.SetMinCol(LIST_OVERKEY);
+			Selection.SetMaxRow(irow);
+			Selection.SetMaxCol(LIST_OVERKEY);
+			//Log(Logs::Wranging, Logs::Setting, "rowcount:%d,irow:%d", m_MyGridCtrl->GetRowCount(), irow);
+			m_MyGridCtrl->ClearCells(Selection);
+			//Log(Logs::General, Logs::Normal, "End Edit on row %d, col %d\n", pItem->iRow, pItem->iColumn);
+
+		}
+	map = true;
+	}
+	
+}
+
+
+void CeqsqlrestoreDlg::OnBnClickedSrule()
+{
+	m_MyGridCtrl->RuleSave(deshost, schost);
+
+}
+

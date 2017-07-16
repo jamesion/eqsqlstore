@@ -3,7 +3,7 @@
 #include "eqemu_logsys.h"
 
 //EQEmuLogSys LogSys;
-
+#pragma once
 Ceqmyslq::Ceqmyslq()
 {
 }
@@ -24,6 +24,7 @@ bool Ceqmyslq::mysql_connect(hostinfo deshost, hostinfo schost)
 {
 	Log(Logs::General, Logs::Normal, "连接数据库....");
 
+
 	dessql = mysql_init((MYSQL*)0);
 	if (dessql == NULL)
 	{
@@ -34,8 +35,7 @@ bool Ceqmyslq::mysql_connect(hostinfo deshost, hostinfo schost)
 	dessql = mysql_real_connect(dessql, deshost.hostip, deshost.username,deshost.pwd, deshost.store, atoi(deshost.port), NULL, 0);
 	if (dessql == NULL)
 	{
-		Log(Logs::Error, Logs::MysqlErro, "连接目标数据库错误！%d", mysql_error(dessql));
-		mysql_close(dessql);
+		Log(Logs::Error, Logs::MysqlErro, "连接目标数据库错误！%d,ip:%s %d", mysql_error(dessql), deshost.hostip,deshost.port);
 		return FALSE;
 
 	}
@@ -81,14 +81,14 @@ bool Ceqmyslq::mysql_connect(hostinfo deshost, hostinfo schost)
 	return TRUE;
 }
 
-bool Ceqmyslq::runSQLCommand(string sql)
+bool Ceqmyslq::runSQLCommand(CString sql)
 {
 	if ((!dessql->reconnect)&&(scsql->reconnect))
 	{//    没有连接到服务器    
 		Log(Logs::General, Logs::MysqlErro, "没有数据库连接！");
 		return false;
 	}
-	if (sql.empty())
+	if (sql.IsEmpty())
 	{//    SQL语句为空    
 		Log(Logs::General, Logs::MysqlErro, "SQL命令为空！");
 		return false;
@@ -99,7 +99,7 @@ bool Ceqmyslq::runSQLCommand(string sql)
 	
 	unsigned int i, j = 0;
 
-	i = mysql_real_query(dessql, sql.c_str(), (unsigned int)strlen(sql.c_str()));//    执行查询    
+	i = mysql_real_query(dessql, sql, (unsigned int)strlen(sql));//    执行查询    
 	if (i < 0)
 	{
 		Log(Logs::General, Logs::MysqlErro, "MYSQL查询指令错误：%s",mysql_error(dessql));
@@ -131,8 +131,8 @@ bool Ceqmyslq::runSQLCommand(string sql)
 	}
 	mysql_free_result(res);   //free result after you get the result    
 
-	for(int i=0;i<resultList.size();++i)
-		Log(Logs::General, Logs::Normal, "MYSQL：%s", resultList[i][0].c_str());
+//	for(int i=0;i<resultList.size();++i)
+//		Log(Logs::General, Logs::Normal, "MYSQL：%s", resultList[i][0].c_str());
 
 	return true;
 }
@@ -163,7 +163,10 @@ unsigned int Ceqmyslq::insert(std::string sql)
 
 vector< vector<string> > Ceqmyslq::getResult()
 {
-	return resultList;
+
+	vector<vector<string> >result;
+	result.swap(resultList);
+	return result;
 }
 
 void Ceqmyslq::destroyConnection()

@@ -44,12 +44,13 @@ typedef const char Const_char;	//for perl XS
 
 struct hostinfo
 {
-	CString hostip;
-	CString username;
-	CString pwd;
-	CString store;
-	CString port;
+	char hostip[16];
+	char username[20];
+	char pwd[20];
+	char store[20];
+	char port[10];
 	};
+
 
 #ifdef _WINDOWS
 	#if (!defined(_MSC_VER) || (defined(_MSC_VER) && _MSC_VER < 1900))

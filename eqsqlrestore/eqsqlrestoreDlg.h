@@ -71,6 +71,15 @@ public:
 private:
 	hostinfo deshost, schost;
 	bool conneted=false;
-
+	void OnGridStartEdit(NMHDR *pNotifyStruct, LRESULT* pResult);
+	void OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult);
+	bool m_bRejectEditAttempts;
+	vector<vector<string> >overlist;
+	vector<string> overkey;
+	CString sql;
+	CString m_Cellstartstring="";
+	bool map=true;
+public:
+	afx_msg void OnBnClickedSrule();
 };
 

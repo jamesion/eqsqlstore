@@ -38,6 +38,10 @@
 #define IDC_SCPORT                      1040
 #define IDC_DESPORTVAL                  1041
 #define IDC_SCPORTVAL                   1042
+#define IDC_OPENRULE                    1043
+#define IDC_SRULE                       1044
+#define IDC_RELOADDEAL                  1045
+#define IDC_RELOADDEAF                  1045
 
 // Next default values for new objects
 // 
@@ -45,7 +49,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        133
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1043
+#define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -73,7 +73,7 @@ bool CMyGridCtrl::upcell()
 	string sCol[5];
 	sCol[0] = "序号";
 	sCol[1] = "主数据表";
-	sCol[2] = "目标字段";
+	sCol[2] = "需替换字段";
 	sCol[3] = "替代键";
 	sCol[4] = "状态";
 	m_MxRow = GetRowCount();
@@ -168,10 +168,11 @@ void CMyGridCtrl::SetCellCombo(int nRow, int nCol, CStringArray & items)
 	{
 		((CGridCellCombo*)pCell)->SetOptions(items);//设置选择列表的值
 		((CGridCellCombo*)pCell)->SetStyle(/*CBS_DROPDOWNLIST| */CBS_DROPDOWN|CBS_SORT| CBS_AUTOHSCROLL);
-		if (items.GetSize()>0)
+
+		/*if (items.GetSize()>0)
 		{
 			((CGridCellCombo*)pCell)->SetText(items.GetAt(0));//设置单元格的当前值
-		}
+		}*/
 	}
 
 }
@@ -315,7 +316,7 @@ bool CMyGridCtrl::SetComboList(int nListID, std::vector < std::vector < std::str
 }
 
 
-
+//设置规则表只读或解锁只读
 void CMyGridCtrl::gridreadonly()
 {
 
@@ -344,6 +345,192 @@ void CMyGridCtrl::gridreadonly()
 		}
 		
 }
+
+
+//设置单元格为下拉列表样式
+void CMyGridCtrl::SetCellCombo(int nRow, int uInt)
+{
+	switch (uInt)
+	{	
+	case LIST_MAINSHEET:
+		SetCellCombo(nRow, LIST_MAINSHEET, mainsheet);
+		break;
+	case LIST_KEYCOL:
+		SetCellCombo(nRow, LIST_KEYCOL, keycol);
+		break;
+	case LIST_OVERKEY:
+		SetCellCombo(nRow, LIST_OVERKEY, overkey);
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+//存储规则表为磁盘文件
+void CMyGridCtrl::RuleSave(hostinfo deshost, hostinfo schost)
+{
+	if (!CheckRule())
+	{
+		Log(Logs::Error, Logs::Setting, "规则不完整，请维护规则！");
+		return;
+	}
+
+
+	int nrow=1;
+
+
+	rulefs.open("Default.rul", ios::out|ios::binary);
+
+	CellText.clear();
+
+//	if(GetItemText(nrow, LIST_MAINSHEET) == "")
+	while (true)
+	{		
+		if (nrow <= 0)
+			return;
+
+		if (GetItemText(nrow, LIST_MAINSHEET) != "")
+			break;
+		nrow++;
+	}
+	while (true)
+	{
+
+
+		nrow=ReadRuleGroup(nrow, &CellText);
+
+		if (nrow <= 0)
+			break;
+	}
+
+	Log(Logs::General, Logs::Files, "celltext:%s", CellText.c_str());
+
+	char* buffs;
+	buffs = new(char[CellText.size()+sizeof(hostinfo)*2+sizeof(int)]);
+
+	memcpy(buffs, &deshost, sizeof(hostinfo));
+	memcpy(buffs + sizeof(hostinfo), &schost, sizeof(hostinfo));
+	memcpy(buffs + sizeof(hostinfo)*2, &m_MxRow, sizeof(int));
+	memcpy(buffs + sizeof(hostinfo)*2+sizeof(int), CellText.c_str(), CellText.size());
+
+	rulefs.write(buffs, CellText.size() + sizeof(hostinfo) * 2 + sizeof(int));
+	rulefs.close();
+
+	delete buffs;
+	return;
+}
+
+//获取规则表一组规则,并返回下组规则主表行数,无规则返回0
+int CMyGridCtrl::ReadRuleGroup(int nRow, std::string* outrulemessage)
+{
+	if (nRow <= 0 || nRow > m_MxRow)
+	{
+
+		return 0;
+	}
+
+	if (outrulemessage->append(GetItemText(nRow, LIST_MAINSHEET)) != "")
+	{
+		outrulemessage->append(",");
+		if (outrulemessage->append(GetItemText(nRow, LIST_KEYCOL)) != "")
+		{
+			outrulemessage->append(",");
+			if (outrulemessage->append(GetItemText(nRow, LIST_OVERKEY)) == "")
+			{
+				return 0;
+			}
+			else
+			{
+				outrulemessage->append(",");
+			}
+		}
+		else
+		{
+			return 0;
+		}
+
+//		
+		nRow++;
+
+	}
+	else
+	{
+		return 0;
+	}
+
+	while (true)
+	{
+		if (nRow > m_MxRow - 1)
+		{
+			outrulemessage->pop_back();
+			return 0;
+		}
+		if (GetItemText(nRow, LIST_MAINSHEET) != "")
+			break;
+
+		if (GetItemText(nRow, LIST_KEYCOL) != "")
+		{
+			outrulemessage->append(GetItemText(nRow, LIST_KEYCOL));
+			outrulemessage->append(",");
+			if (GetItemText(nRow, LIST_OVERKEY) == "")
+			{
+				return 0;
+			}
+			else
+			{
+				outrulemessage->append(GetItemText(nRow, LIST_OVERKEY));
+				outrulemessage->append(",");
+			}
+			nRow++;
+		}
+		else
+		{
+				if (nRow >= m_MxRow)
+				{
+					outrulemessage->pop_back();
+					return 0;
+				}
+				//if (GetItemText(nRow, LIST_MAINSHEET) != "")
+				//	break;
+				nRow++;
+			
+		}
+
+	}
+	outrulemessage->pop_back();
+	outrulemessage->append("|");
+	return nRow;
+}
+
+//较验规则完整性
+bool CMyGridCtrl::CheckRule()
+{
+	bool pass = true;
+	//COLORREF Color = RGB(255, 0, 0);
+	for (int irow = 1; irow <= m_MxRow; irow++)
+	{
+		if (GetItemText(irow, LIST_KEYCOL) != "")
+		{
+			if (GetItemText(irow, LIST_OVERKEY) == "")
+			{
+				GetCell(irow, LIST_OVERKEY)->SetBackClr(RGB(255, 0, 0));
+				pass = false;
+
+			}
+			else
+			{
+				GetCell(irow, LIST_OVERKEY)->SetBackClr(GetCell(irow, LIST_MAINSHEET)->GetBackClr());
+			}
+		}
+	}
+	this->Refresh();
+	return pass;
+}
+
+
+
 
 
 
