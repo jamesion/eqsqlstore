@@ -60,7 +60,9 @@ CeqsqlrestoreDlg::CeqsqlrestoreDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_EQSQLRESTORE_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	//m_hAdd = AfxGetApp()->LoadIcon(IDI_ADD);
 	m_pAutoProxy = NULL;
+
 
 }
 
@@ -93,6 +95,9 @@ BEGIN_MESSAGE_MAP(CeqsqlrestoreDlg, CDialogEx)
 	ON_NOTIFY(GVN_BEGINLABELEDIT,IDC_GRID,&CeqsqlrestoreDlg::OnGridStartEdit)
 	ON_NOTIFY(GVN_ENDLABELEDIT, IDC_GRID, &CeqsqlrestoreDlg::OnGridEndEdit)
 	ON_BN_CLICKED(IDC_SRULE, &CeqsqlrestoreDlg::OnBnClickedSrule)
+	ON_BN_CLICKED(IDC_OPENRULE, &CeqsqlrestoreDlg::OnBnClickedOpenrule)
+	ON_BN_CLICKED(IDC_RELOADDEAF, &CeqsqlrestoreDlg::OnBnClickedReloaddeaf)
+	ON_BN_CLICKED(IDC_RUN, &CeqsqlrestoreDlg::OnBnClickedRun)
 END_MESSAGE_MAP()
 
 
@@ -118,7 +123,7 @@ BOOL CeqsqlrestoreDlg::OnInitDialog()
 		if (!strAboutMenu.IsEmpty())
 		{
 			pSysMenu->AppendMenu(MF_SEPARATOR);
-			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+			//pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 		}
 	}
 
@@ -140,9 +145,7 @@ BOOL CeqsqlrestoreDlg::OnInitDialog()
 	m_MyGridCtrl->Create(this, IDC_GRID);
 
 
-	CString list;
-//	list.Append("this's one para|this's two para|this's three para|");
-//	m_MyGridCtrl->SetComboList(LIST_OVERKEY, , false);
+//	CString list;
 
 	m_MyGridCtrl->upcell();
 
@@ -152,23 +155,20 @@ BOOL CeqsqlrestoreDlg::OnInitDialog()
 	LogSys.LoadLogSettingsDefaults();
 	myeqsql = new Ceqmyslq();
 
-	SethostInfo();
+//打开默认文件
+	if (!m_MyGridCtrl->RuleOpen(&deshost, &schost, true))
+	{
+		Log(Logs::Error, Logs::Files, "[Default.rul]无法打开，请确保eqsqlrestore文件完整性！");
+		MessageBox("[Default.rul]无法打开，请确保eqsqlrestore文件完整性！", "eqsqlrestore文件缺失", MB_ICONHAND);
+
+		//OnCancel();
+	}
+	SethostInfo(deshost, schost);
 
 	Setitemreadonly(false);
+	//buttonselete();
 
-/*
-	overkey.push_back("EMU服务器ID");
-	overlist.push_back(overkey);
-	vector<string>().swap(overkey);
-	overkey.push_back("本地服务器ID");
-	overlist.push_back(overkey);
-	vector<string>().swap(overkey);
-	overkey.push_back("角色ID");
-	overlist.push_back(overkey);
-	vector<string>().swap(overkey);
 
-	*/
-	// TODO: 在此添加额外的初始化代码
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -264,43 +264,71 @@ BOOL CeqsqlrestoreDlg::CanExit()
 
 void CeqsqlrestoreDlg::OnBnClickedConnet()
 {
+	string back;
+	for(int nrow=1;nrow<m_MyGridCtrl->GetRowCount();nrow++)
+	m_MyGridCtrl->SetItemText(nrow, 4, "");
+
 	if (!conneted)
 	{
+
 		if (!Gethostinfo())
 			return;
+		((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(0);
 		if (!myeqsql->mysql_connect(deshost, schost))
+		{
+			((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(1);
 			return;
-
+		}
 		sql.Format("select table_name from information_schema.tables where table_schema='jameeq' and table_type='base table'");
-		myeqsql->runSQLCommand(sql);
-		m_MyGridCtrl->SetComboList(LIST_MAINSHEET, myeqsql->getResult(), false);
-		Setitemreadonly(TRUE);
-		//Log(Logs::General, Logs::Normal, "sql：%s", sql);
+		if ((back = myeqsql->runSQLCommand(sql)) != "")
+		{
+			Log(Logs::Error, Logs::MysqlErro, "连接：%s", back.c_str());
+			((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(1);
+			return;
+		}
+
+		if (!m_MyGridCtrl->SetComboList(LIST_MAINSHEET, myeqsql->getResult(), false))
+		{
+			Log(Logs::Error, Logs::MysqlErro, "设置列表失败！");
+			((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(1);
+			return;
+		}
+
+
+
 		SetDlgItemTextA(IDC_CONNET, "断开");
-		conneted = true;
-		
+		conneted = myeqsql->getConnectionStatus();
+		Setitemreadonly(conneted);
+		m_MyGridCtrl->upcell();
+		((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(1);
+
 	}
 	else 
 	{
+		((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(0);
 		myeqsql->Close();
 		SetDlgItemTextA(IDC_CONNET, "连接");
-		Setitemreadonly(false);
-		conneted = false;
+
+		conneted = myeqsql->getConnectionStatus();
+		Setitemreadonly(conneted);	
+		m_MyGridCtrl->upcell();
+		((CButton*)GetDlgItem(IDC_CONNET))->EnableWindow(1);
+
 	}
 	return ;
 }
 
 
-/*void CeqsqlrestoreDlg::buttonselete()
+void CeqsqlrestoreDlg::buttonselete()
 {
-	CButton* btn = (CButton*)GetDlgItem(IDC_CONNET);
+	CButton* btn = (CButton*)GetDlgItem(IDC_ADD);
 
 	//btn->EnableFullTextTooltip(true);
-	btn->SetIcon(NULL);
+	//btn->SetIcon(m_hAdd);
 
 	
 }
-*/
+
 
 void CeqsqlrestoreDlg::OnBnClickedAdd()
 {
@@ -347,7 +375,6 @@ bool CeqsqlrestoreDlg::Gethostinfo()
 	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器密码！");
-		//return false;
 		pas = false;
 
 	}
@@ -358,7 +385,6 @@ bool CeqsqlrestoreDlg::Gethostinfo()
 	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器库名！");
-		//return false;
 		pas = false;
 
 	}
@@ -369,7 +395,6 @@ bool CeqsqlrestoreDlg::Gethostinfo()
 	if (val == "")
 	{
 		Log(Logs::General, Logs::MysqlErro, "请正确输入目标Mysql服务器端口！");
-		//return false;
 		pas = false;
 
 	}
@@ -442,23 +467,24 @@ bool CeqsqlrestoreDlg::Gethostinfo()
 }
 
 
-bool CeqsqlrestoreDlg::SethostInfo()
+void CeqsqlrestoreDlg::SethostInfo(hostinfo dshost,hostinfo shost)
 {
-	SetDlgItemTextA(IDC_DESHOST, "127.0.0.1");
-	SetDlgItemTextA(IDC_DESUSER, "root");
-	SetDlgItemTextA(IDC_DESPASSWD, "tylz");
-	SetDlgItemTextA(IDC_DESSTORE, "jameeq");
-	SetDlgItemTextA(IDC_DESPORT, "3306");
-
-	SetDlgItemTextA(IDC_SCHOST, "127.0.0.1");
-	SetDlgItemTextA(IDC_SCUSER, "root");
-	SetDlgItemTextA(IDC_SCPASSWD, "tylz");
-	SetDlgItemTextA(IDC_SCRESTORE, "jameeq");
-	SetDlgItemTextA(IDC_SCPORT, "3306");
 
 
+		SetDlgItemTextA(IDC_DESHOST, dshost.hostip);
+		SetDlgItemTextA(IDC_DESUSER, dshost.username);
+		SetDlgItemTextA(IDC_DESPASSWD, dshost.pwd);
+		SetDlgItemTextA(IDC_DESSTORE, dshost.store);
+		SetDlgItemTextA(IDC_DESPORT, dshost.port);
 
-	return false;
+		SetDlgItemTextA(IDC_SCHOST, shost.hostip);
+		SetDlgItemTextA(IDC_SCUSER, shost.username);
+		SetDlgItemTextA(IDC_SCPASSWD, shost.pwd);
+		SetDlgItemTextA(IDC_SCRESTORE, shost.store);
+		SetDlgItemTextA(IDC_SCPORT, shost.port);
+//		Log(Logs::General, Logs::Normal, "重新设置服务器");
+
+	
 }
 
 
@@ -494,17 +520,31 @@ void CeqsqlrestoreDlg::OnGridStartEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
 	if (map)
 	{
 		map = false;
+		string back;
 
 		NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
 		CString s_mainsheet, s_overkey;
 
-		//CString sqlcom;
 		int irow = pItem->iRow;
 		m_Cellstartstring.IsEmpty();
 		m_Cellstartstring = m_MyGridCtrl->GetItemText(pItem->iRow, pItem->iColumn);
 
-		//Log(Logs::General, Logs::Normal, "Start Edit on row %d, col %d,startstring:%s", pItem->iRow, pItem->iColumn, m_Cellstartstring);
+		if (pItem->iColumn == LIST_MAINSHEET)
+		{
 
+			sql.Format("select table_name from information_schema.tables where table_schema='jameeq' and table_type='base table'");
+			if ((back = myeqsql->runSQLCommand(sql)) != "")
+			{
+				Log(Logs::Error, Logs::MysqlErro, "%s", back);
+				return;
+			}
+//			Log(Logs::General, Logs::Normal, "%s", back.c_str());
+			m_MyGridCtrl->SetComboList(LIST_MAINSHEET, myeqsql->getResult(), false);
+			m_MyGridCtrl->SetCellCombo(pItem->iRow, LIST_MAINSHEET);
+				
+			
+		}
+		
 		if (pItem->iColumn == LIST_KEYCOL)
 		{
 			while (s_mainsheet = m_MyGridCtrl->GetItemText(irow, LIST_MAINSHEET))
@@ -513,10 +553,15 @@ void CeqsqlrestoreDlg::OnGridStartEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
 				if (!s_mainsheet.IsEmpty())
 				{
 					sql.Format("select column_name from information_schema.columns where table_schema = 'jameeq' and table_name = '%s'", s_mainsheet);
-					myeqsql->runSQLCommand(sql);
-					//Log(Logs::General, Logs::Normal, "SQL指令：%s", sql);
+					if ((back = myeqsql->runSQLCommand(sql)) != "")
+					{
+						Log(Logs::Error, Logs::MysqlErro, "%s", back);
+						return;
+					}
+//					Log(Logs::General, Logs::Normal, "SQL指令：%s,maisheet:%s", sql, s_mainsheet);
 					m_MyGridCtrl->SetComboList(LIST_KEYCOL, myeqsql->getResult(), false);
 					m_MyGridCtrl->SetCellCombo(pItem->iRow, LIST_KEYCOL);
+
 					break;
 				}
 				--irow;
@@ -611,7 +656,6 @@ void CeqsqlrestoreDlg::OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
 						break;
 					}
 
-				//	if(irow<maxrow)
 					irow++;
 				}
 
@@ -619,17 +663,14 @@ void CeqsqlrestoreDlg::OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
 
 			}
 		}
-		//	irow = irow - 1;
 		if (pItem->iColumn == LIST_MAINSHEET)
 		{
 			Selection.SetMinRow(pItem->iRow);
 			Selection.SetMinCol(LIST_KEYCOL);
 			Selection.SetMaxRow(irow);
 			Selection.SetMaxCol(LIST_OVERKEY);
-			//Log(Logs::Wranging, Logs::Setting, "rowcount:%d,irow:%d", m_MyGridCtrl->GetRowCount(), irow);
 			m_MyGridCtrl->ClearCells(Selection);
 
-			//Log(Logs::General, Logs::Normal, "End Edit on row %d, col %d\n", pItem->iRow, pItem->iColumn);
 		}
 
 		if (pItem->iColumn == LIST_KEYCOL)
@@ -638,9 +679,7 @@ void CeqsqlrestoreDlg::OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
 			Selection.SetMinCol(LIST_OVERKEY);
 			Selection.SetMaxRow(irow);
 			Selection.SetMaxCol(LIST_OVERKEY);
-			//Log(Logs::Wranging, Logs::Setting, "rowcount:%d,irow:%d", m_MyGridCtrl->GetRowCount(), irow);
 			m_MyGridCtrl->ClearCells(Selection);
-			//Log(Logs::General, Logs::Normal, "End Edit on row %d, col %d\n", pItem->iRow, pItem->iColumn);
 
 		}
 	map = true;
@@ -651,7 +690,85 @@ void CeqsqlrestoreDlg::OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult)
 
 void CeqsqlrestoreDlg::OnBnClickedSrule()
 {
-	m_MyGridCtrl->RuleSave(deshost, schost);
+	if (!conneted)
+	{
+		Log(Logs::General, Logs::Normal, "数据库未连接！");
+		return;
+	}
+	m_MyGridCtrl->RuleSave(deshost, schost,true);
 
 }
 
+
+
+void CeqsqlrestoreDlg::OnBnClickedOpenrule()
+{
+	m_MyGridCtrl->RuleOpen(&deshost,&schost);
+	SethostInfo(deshost, schost);
+}
+
+
+void CeqsqlrestoreDlg::OnBnClickedReloaddeaf()
+{
+	m_MyGridCtrl->RuleOpen(&deshost,&schost,true);
+	SethostInfo(deshost, schost);
+}
+
+
+void CeqsqlrestoreDlg::OnBnClickedRun()
+{
+
+	if (!conneted)
+	{
+		Log(Logs::Error, Logs::MysqlErro, "请先连接服务器！");
+		return;
+	}
+	if (!m_MyGridCtrl->CheckRule())
+	{
+		return;
+	}
+
+	string rulegroup,info;
+
+	int nrow = 1, nrow_old = 0;
+
+	m_MyGridCtrl->Setreadonly(true);
+
+	while (true)
+	{
+		nrow_old = nrow;
+		nrow = m_MyGridCtrl->ReadRuleGroup(nrow, &rulegroup);
+
+		if ((info=myeqsql->CopyData(rulegroup))!="")
+		{
+
+			Log(Logs::Error, Logs::MysqlErro, "%s", info.c_str());
+			m_MyGridCtrl->SetItemFgColour(nrow_old, 4, RGB(255, 0, 0));
+			m_MyGridCtrl->SetItemText(nrow_old, 4, info.c_str());
+		}
+		else
+		{
+			m_MyGridCtrl->SetItemFgColour(nrow_old, 4, RGB(0, 255, 0));
+			m_MyGridCtrl->SetItemText(nrow_old, 4, "数据表维护完成.");
+		}
+
+		rulegroup.clear();
+
+		if(!nrow)
+		{
+			break;
+		}
+	}
+	if (info == "")
+	{
+		Log(Logs::General, Logs::Normal, "所有数据恢复完成.");
+
+	}
+	else
+	{
+		Log(Logs::Wranging, Logs::MysqlErro, "数据恢复有误： %s", info.c_str());
+	}
+
+
+	m_MyGridCtrl->Setreadonly(false);
+}

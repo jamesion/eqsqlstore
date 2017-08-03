@@ -33,10 +33,13 @@
 #pragma once
 namespace Logs {
 	enum DebugLevel {
-		General = 1,	
-		Wranging,		
-		Error			
+		Error = 0,
+		Wranging,
+		General,
+		MaxLevelID
 	};
+
+
 
 	/*
 		If you add to this, make sure you update LogCategoryName
@@ -59,6 +62,12 @@ static const char* LogCategoryName[LogCategory::MaxCategoryID] = {
 	"Setting",
 	"Files",
 	"MysqlErro",	
+};
+
+static const char* DebugLevelName[DebugLevel::MaxLevelID] = {
+	"Error",
+	"Wranging",
+	"General"
 };
 }
 
@@ -139,7 +148,7 @@ public:
 
 private:
 	std::function<void(uint16 log_category, const std::string&)> on_log_gmsay_hook; /* Callback pointer to zone process for hooking logs to zone using GMSay */
-	std::string FormatOutMessageString(uint16 log_category, const std::string &in_message); /* Formats log messages like '[Category] This is a log message' */
+	std::string FormatOutMessageString(uint16 debug_level, uint16 log_category, const std::string &in_message); /* Formats log messages like '[Category] This is a log message' */
 	std::string GetLinuxConsoleColorFromCategory(uint16 log_category); /* Linux console color messages mapped by category */
 
 	uint16 GetWindowsConsoleColorFromCategory(uint16 log_category); /* Windows console color messages mapped by category */

@@ -48,19 +48,43 @@ bool CMyGridCtrl::Create(CWnd* parent, UINT nID, DWORD dwStyle)
 
 									//创建控件  
 	//m_GridCtrl = new CGridCtrl();
-	CGridCtrl::Create(CRect(rectgrid.left - rectdlg.left - cxframe,
+	if (!CGridCtrl::Create(CRect(rectgrid.left - rectdlg.left - cxframe,
 		rectgrid.top - rectdlg.top - cyframe - captionHeight,
 		rectgrid.left + rectgrid.Width() - rectdlg.left - cyframe,
-		rectgrid.top + rectgrid.Height() - rectdlg.top - captionHeight - cxframe), parent, nID, dwStyle);
-
-	//if (!m_GridCtrl)
-		//return false;
+		rectgrid.top + rectgrid.Height() - rectdlg.top - captionHeight - cxframe), parent, nID, dwStyle))
+	{
+		Log(Logs::Error, Logs::Setting, "规则表创建失败!");
+		return false;
+	}
 	//设置第一行和第一列为控件固定行和列，即标题行和标题列
 	this->SetFixedRowCount(1);
 	this->SetFixedColumnCount(1);
 
 	this->SetColumnCount(m_MxCol);
 	this->SetRowCount(m_MxRow);
+
+	//设置固定行标题
+
+	int row = 0;
+	string sCol[5];
+	sCol[0] = "序号";
+	sCol[1] = "主数据表";
+	sCol[2] = "需替换字段";
+	sCol[3] = "替代键";
+	sCol[4] = "状态";
+	for (int col = 0; col < GetColumnCount(); col++)
+	{
+		GV_ITEM Item;
+		Item.mask = GVIF_TEXT | GVIF_FORMAT;
+		Item.row = row;
+		Item.col = col;
+		if (row < 1) {
+			Item.nFormat = DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX;
+			Item.strText.Format(_T("%s"), sCol[col].c_str());
+			this->SetItem(&Item);
+		}
+	}
+
 	return true;
 }
 
@@ -68,14 +92,6 @@ bool CMyGridCtrl::upcell()
 {
 
 
-	//设置固定行标题
-	string nCol;
-	string sCol[5];
-	sCol[0] = "序号";
-	sCol[1] = "主数据表";
-	sCol[2] = "需替换字段";
-	sCol[3] = "替代键";
-	sCol[4] = "状态";
 	m_MxRow = GetRowCount();
 	m_MxCol = GetColumnCount();
 	this->SetRowCount(m_MxRow);
@@ -89,12 +105,8 @@ bool CMyGridCtrl::upcell()
 			Item.mask = GVIF_TEXT | GVIF_FORMAT;
 			Item.row = row;
 			Item.col = col;
-			if (row < 1) {
-				Item.nFormat = DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX;
-				Item.strText.Format(_T("%s"), sCol[col].c_str());
-				this->SetItem(&Item);
-			}
-			else if (col < 1) {
+
+			if (col < 1) {
 				Item.nFormat = DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS | DT_NOPREFIX;
 				Item.strText.Format(_T("%d"), row);
 				this->SetItem(&Item);
@@ -103,11 +115,10 @@ bool CMyGridCtrl::upcell()
 		}
 		if (row > 0)
 		{
-			/*SetCellCombo(row, 1, mainsheet);
-			SetCellCombo(row, 2, keycol);
-			SetCellCombo(row, 3, overkey);*/
 			SetItemState(row, 4, GVIS_READONLY);
 		}
+
+		Refresh();
 
 	}
 
@@ -167,7 +178,7 @@ void CMyGridCtrl::SetCellCombo(int nRow, int nCol, CStringArray & items)
 	if (pCell != NULL&&pCell->IsKindOf(RUNTIME_CLASS(CGridCellCombo)))
 	{
 		((CGridCellCombo*)pCell)->SetOptions(items);//设置选择列表的值
-		((CGridCellCombo*)pCell)->SetStyle(/*CBS_DROPDOWNLIST| */CBS_DROPDOWN|CBS_SORT| CBS_AUTOHSCROLL);
+		((CGridCellCombo*)pCell)->SetStyle(CBS_DROPDOWNLIST| CBS_DROPDOWN|CBS_SORT| CBS_AUTOHSCROLL);
 
 		/*if (items.GetSize()>0)
 		{
@@ -195,7 +206,10 @@ void CMyGridCtrl::SetCellCheck(int nRow, int nCol, bool isCheck)
 int CMyGridCtrl::AddRowCount()
 {
 	if (readonly)
+	{
+		Log(Logs::Error, Logs::Setting, "请连接服务器");
 		return FALSE;
+	}
 	//获取选中元素
 	CCellRange Selection = this->GetSelectedCellRange();
 
@@ -207,7 +221,7 @@ int CMyGridCtrl::AddRowCount()
 		if ((Selection.GetRowSpan() == 1) && (Selection.GetMaxCol() == m_MxCol - 1))
 		{
 			nRow=InsertRow("", Selection.GetMaxRow());
-			SetSelectedRange(Selection);
+
 		}
 		else
 			nRow = this->InsertRow("", -1);
@@ -226,7 +240,10 @@ int CMyGridCtrl::AddRowCount()
 
 //刷新表格
 	upcell();
-
+	if (IsValid(Selection))
+	{
+		SetSelectedRange(Selection);
+	}
 	return TRUE;
 }
 
@@ -234,6 +251,12 @@ int CMyGridCtrl::AddRowCount()
 int CMyGridCtrl::MudRowCount()
 {
 	//获取选中元素
+	if (readonly)
+	{
+		Log(Logs::Error, Logs::Setting, "请连接服务器");
+		return FALSE;
+	}
+
 	CCellRange Selection = this->GetSelectedCellRange();
 	
 	//判断行选中
@@ -248,7 +271,10 @@ int CMyGridCtrl::MudRowCount()
 		}
 
 	upcell();
-
+	if (IsValid(Selection))
+	{
+		SetSelectedRange(Selection);
+	}
 	return 0;
 
 }
@@ -369,56 +395,63 @@ void CMyGridCtrl::SetCellCombo(int nRow, int uInt)
 
 
 //存储规则表为磁盘文件
-void CMyGridCtrl::RuleSave(hostinfo deshost, hostinfo schost)
+void CMyGridCtrl::RuleSave(hostinfo deshost, hostinfo schost,BOOL default)
 {
 	if (!CheckRule())
 	{
-		Log(Logs::Error, Logs::Setting, "规则不完整，请维护规则！");
 		return;
 	}
 
+	fstream rulefs;
+	int nrow;
 
-	int nrow=1;
+	rulefs.close();
+	string filename;
+	filename.clear();
+	if (default)
+		filename.append("Default.rul");
+	else
+		filename.append("Custom.rul");
 
+	rulefs.open(filename.c_str(), ios::out | ios::binary);
+	if (!rulefs)
+	{
+		Log(Logs::Error, Logs::Files, "[%s]文件打开文件失败！", filename.c_str());
+		return;
 
-	rulefs.open("Default.rul", ios::out|ios::binary);
-
+	}
 	CellText.clear();
 
 //	if(GetItemText(nrow, LIST_MAINSHEET) == "")
-	while (true)
-	{		
-		if (nrow <= 0)
+
+
+
+		nrow=ReadRule(&CellText);
+
+		if (nrow <= 0 || nrow > m_MxRow)
+		{
+			Log(Logs::Error, Logs::Files, "无法获取规则.");
 			return;
-
-		if (GetItemText(nrow, LIST_MAINSHEET) != "")
-			break;
-		nrow++;
-	}
-	while (true)
-	{
+		}
 
 
-		nrow=ReadRuleGroup(nrow, &CellText);
-
-		if (nrow <= 0)
-			break;
-	}
-
-	Log(Logs::General, Logs::Files, "celltext:%s", CellText.c_str());
+	size_t filesize = CellText.size() + sizeof(hostinfo) * 2 + sizeof(int)+1;
+//	Log(Logs::General, Logs::Files, "Celltext:%s,Textsize:%d,filesize:%d", CellText.c_str(),CellText.size(), filesize);
 
 	char* buffs;
-	buffs = new(char[CellText.size()+sizeof(hostinfo)*2+sizeof(int)]);
+	buffs = new(char[filesize]);
 
 	memcpy(buffs, &deshost, sizeof(hostinfo));
 	memcpy(buffs + sizeof(hostinfo), &schost, sizeof(hostinfo));
 	memcpy(buffs + sizeof(hostinfo)*2, &m_MxRow, sizeof(int));
-	memcpy(buffs + sizeof(hostinfo)*2+sizeof(int), CellText.c_str(), CellText.size());
+	memcpy(buffs + sizeof(hostinfo)*2+sizeof(int), CellText.c_str(), CellText.size()+1);
 
-	rulefs.write(buffs, CellText.size() + sizeof(hostinfo) * 2 + sizeof(int));
+	rulefs.write(buffs, filesize);
 	rulefs.close();
 
 	delete buffs;
+
+	Log(Logs::General, Logs::Files, "保存规则完成.");
 	return;
 }
 
@@ -431,33 +464,20 @@ int CMyGridCtrl::ReadRuleGroup(int nRow, std::string* outrulemessage)
 		return 0;
 	}
 
-	if (outrulemessage->append(GetItemText(nRow, LIST_MAINSHEET)) != "")
+	while (true)
 	{
-		outrulemessage->append(",");
-		if (outrulemessage->append(GetItemText(nRow, LIST_KEYCOL)) != "")
+		if (outrulemessage->append(GetItemText(nRow, LIST_MAINSHEET)) != "")
 		{
 			outrulemessage->append(",");
-			if (outrulemessage->append(GetItemText(nRow, LIST_OVERKEY)) == "")
-			{
-				return 0;
-			}
-			else
-			{
-				outrulemessage->append(",");
-			}
+			outrulemessage->append(GetItemText(nRow, LIST_KEYCOL));
+			outrulemessage->append(",");
+			outrulemessage->append(GetItemText(nRow, LIST_OVERKEY));
+			outrulemessage->append(",");
+			nRow++;
+			break;
 		}
-		else
-		{
-			return 0;
-		}
-
-//		
 		nRow++;
 
-	}
-	else
-	{
-		return 0;
 	}
 
 	while (true)
@@ -465,6 +485,7 @@ int CMyGridCtrl::ReadRuleGroup(int nRow, std::string* outrulemessage)
 		if (nRow > m_MxRow - 1)
 		{
 			outrulemessage->pop_back();
+//			outrulemessage->append("|");
 			return 0;
 		}
 		if (GetItemText(nRow, LIST_MAINSHEET) != "")
@@ -474,14 +495,15 @@ int CMyGridCtrl::ReadRuleGroup(int nRow, std::string* outrulemessage)
 		{
 			outrulemessage->append(GetItemText(nRow, LIST_KEYCOL));
 			outrulemessage->append(",");
-			if (GetItemText(nRow, LIST_OVERKEY) == "")
-			{
-				return 0;
-			}
-			else
+			if (GetItemText(nRow, LIST_OVERKEY) != "")
 			{
 				outrulemessage->append(GetItemText(nRow, LIST_OVERKEY));
 				outrulemessage->append(",");
+
+			}
+			else
+			{
+				return 0;
 			}
 			nRow++;
 		}
@@ -500,16 +522,73 @@ int CMyGridCtrl::ReadRuleGroup(int nRow, std::string* outrulemessage)
 
 	}
 	outrulemessage->pop_back();
-	outrulemessage->append("|");
+//	outrulemessage->append("|");
 	return nRow;
+}
+
+int CMyGridCtrl::ReadRule(std::string * outrulemessage)
+{
+	int nrow = 1, ncol;
+	string cellc;
+	while (true)
+	{
+
+		if (nrow > m_MxRow)
+		{
+			Log(Logs::General, Logs::Setting, "规则表中并未找到规则，请维护规则！");
+			return nrow;
+		}
+
+		if (GetItemText(nrow, LIST_MAINSHEET) != "")
+			break;
+		nrow++;
+	}
+
+	for (nrow = 1; nrow < m_MxRow; nrow++)
+	{
+		for (ncol = 1; ncol <= LIST_OVERKEY; ncol++)
+		{
+//			if(ncol==LIST_MAINSHEET)
+//				outrulemessage->append(NULL);
+			cellc=GetItemText(nrow, ncol);
+			if (cellc == "")
+				cellc = " ";
+			outrulemessage->append(cellc);
+			outrulemessage->append(",");
+
+			if (ncol == LIST_OVERKEY)
+				outrulemessage->pop_back();
+		}
+		outrulemessage->append("|");
+	}
+	outrulemessage->pop_back();
+	return nrow;
 }
 
 //较验规则完整性
 bool CMyGridCtrl::CheckRule()
 {
 	bool pass = true;
-	//COLORREF Color = RGB(255, 0, 0);
-	for (int irow = 1; irow <= m_MxRow; irow++)
+	int irow;
+	string Ctext,maintext,keytext,overtext;
+	char* test;
+
+	Log(Logs::Wranging, Logs::Setting, "检查规则完整性，并删除空白行");
+
+	for (irow = 1; irow < GetRowCount(); irow++)
+	{
+		if (GetItemText(irow, LIST_MAINSHEET) == ""&&GetItemText(irow, LIST_KEYCOL) == ""&&GetItemText(irow, LIST_OVERKEY) == "")
+		{
+				DeleteRow(irow);
+				--irow;
+		}
+		Ctext = GetItemText(irow, LIST_MAINSHEET);
+		test = (char*)Ctext.c_str();
+
+	}
+	
+	upcell();
+	for (irow = 1; irow <= m_MxRow; irow++)
 	{
 		if (GetItemText(irow, LIST_KEYCOL) != "")
 		{
@@ -526,7 +605,127 @@ bool CMyGridCtrl::CheckRule()
 		}
 	}
 	this->Refresh();
+
+	if (!pass)
+	{
+		Log(Logs::Error, Logs::Setting, "规则不完整，请维护红色背景规则！");
+	}
 	return pass;
+}
+
+bool CMyGridCtrl::RuleOpen(hostinfo* deshost, hostinfo* schost,bool default)
+{
+	fstream rfsrule;
+	string filename;
+	if (default)
+		filename = "Default.rul";
+	else
+		filename = "Custom.rul";
+	rfsrule.close();
+	rfsrule.clear();
+	rfsrule.open(filename.c_str(), ios_base::in | ios_base::binary| ios_base::_Nocreate);
+	if (!rfsrule)
+	{
+		Log(Logs::Error, Logs::Files, "[%s]文件打开文件失败！",filename.c_str());
+		return false;
+
+	}
+
+	rfsrule.seekg(0, rfsrule.end);
+	size_t srcSize = rfsrule.tellg();
+	if (!srcSize) {
+		Log(Logs::Error, Logs::Files, "[%s]文件为空！", filename.c_str());
+		rfsrule.close();
+		Log(Logs::General, Logs::Normal, "[%s]文件已关闭", filename.c_str());
+		    return false;
+		
+	}
+
+
+	rfsrule.seekg(0);
+	char *rfsbuffs;
+	string FileText;
+
+	FileText.clear();
+
+	hostinfo fdeshost, fschost;
+	size_t fsize = srcSize - sizeof(hostinfo) * 2 - sizeof(int);
+	rfsbuffs = new (char[fsize]);
+	rfsrule.read((char*)&fdeshost, sizeof(hostinfo));
+	rfsrule.read((char*)&fschost, sizeof(hostinfo));
+	rfsrule.read((char*)&m_MxRow, sizeof(int));
+	*deshost = fdeshost;
+	*schost = fschost;
+		rfsrule.read(rfsbuffs, fsize);
+		FileText=rfsbuffs;
+
+
+	
+	filetogrid(FileText);
+	Log(Logs::General, Logs::Files, "[%s]文件读入完成。", filename.c_str());
+	if (rfsrule)
+		rfsrule.close();
+	delete(rfsbuffs);
+	return true;
+
+}
+
+
+//将文件读入规则表
+void CMyGridCtrl::filetogrid(string filetext)
+{
+
+	char* rfs;
+	const char* filetx="|",*coltx=",",cellnull=(char)0x20;
+	string rulerow,empty;
+	std::vector < std::string > setcelltext;
+
+
+	rfs=strtok((char*)filetext.c_str(), filetx);
+	setcelltext.push_back(rfs);
+
+	while(rfs=strtok(NULL, filetx))
+	{		
+		setcelltext.push_back(rfs);
+
+	}
+
+	if (setcelltext.size() > m_MxRow)
+	{
+		Log(Logs::Error, Logs::Files, "文件损坏，请修复文件或重新制定规则。");
+		return;
+	}
+
+	SetRowCount(m_MxRow);
+	for (int i = 0; i < m_MxRow - 1; i++)
+	{
+		//		Log(Logs::General, Logs::Normal, "FileText:[%d]%s,mxrow:%d", i,setcelltext[i].c_str(),m_MxRow);
+		rfs = strtok((char*)setcelltext[i].c_str(), coltx);
+		if (*rfs == cellnull)
+		{
+			rfs = "";
+		}
+		SetItemText(i + 1, LIST_MAINSHEET, rfs);
+
+		rfs = strtok(NULL, coltx);
+		if (*rfs == cellnull)
+		{
+			rfs = "";
+		}
+		SetItemText(i + 1, LIST_KEYCOL, rfs);
+
+		rfs = strtok(NULL, coltx);
+		if (*rfs == cellnull)
+		{
+			rfs = "";
+		}
+		SetItemText(i + 1, LIST_OVERKEY, rfs);
+
+	}
+
+	upcell();
+
+	return;
 }
 
 

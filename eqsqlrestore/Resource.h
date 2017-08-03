@@ -7,7 +7,7 @@
 #define IDP_OLE_INIT_FAILED             100
 #define IDS_ABOUTBOX                    101
 #define IDD_EQSQLRESTORE_DIALOG         102
-#define IDR_MAINFRAME                   128
+#define IDR_MAINFRAME                   134
 #define IDC_GRID                        1002
 #define IDC_DESHOSTVAL                  1003
 #define IDC_DESUSERVAL                  1004
@@ -42,14 +42,15 @@
 #define IDC_SRULE                       1044
 #define IDC_RELOADDEAL                  1045
 #define IDC_RELOADDEAF                  1045
+#define IDC_RUN                         1046
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        133
+#define _APS_NEXT_RESOURCE_VALUE        137
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1046
+#define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

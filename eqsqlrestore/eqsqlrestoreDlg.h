@@ -34,8 +34,8 @@ public:
 protected:
 	CeqsqlrestoreDlgAutoProxy* m_pAutoProxy;
 	HICON m_hIcon;
-
-
+	HICON m_hAdd;
+	hostinfo deshost, schost;
 	BOOL CanExit();
 
 	// 生成的消息映射函数
@@ -49,6 +49,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedConnet();
+	void buttonselete();
 	CMyGridCtrl* m_MyGridCtrl=nullptr;
 	//void buttonselete();
 	afx_msg void OnBnClickedAdd();
@@ -62,14 +63,14 @@ public:
 	
 	bool Gethostinfo();// 获取服务器信息
 	
-	bool SethostInfo();//设置服务器默认信息
+	void SethostInfo(hostinfo dshost, hostinfo shost);//设置服务器默认信息
 
 
 	void Sethostinforeadonly(bool b_Read);//设置服务输入项是否为只读
 	void Setitemreadonly(bool b_Read);//设置窗口控件是否为只读
 
 private:
-	hostinfo deshost, schost;
+
 	bool conneted=false;
 	void OnGridStartEdit(NMHDR *pNotifyStruct, LRESULT* pResult);
 	void OnGridEndEdit(NMHDR *pNotifyStruct, LRESULT* pResult);
@@ -81,5 +82,8 @@ private:
 	bool map=true;
 public:
 	afx_msg void OnBnClickedSrule();
+	afx_msg void OnBnClickedOpenrule();
+	afx_msg void OnBnClickedReloaddeaf();
+	afx_msg void OnBnClickedRun();
 };
 

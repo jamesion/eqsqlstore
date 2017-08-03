@@ -152,11 +152,5 @@
     <Image Include="res\eqsqlrestore.ico">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="C:\Users\jamesion\Pictures\符号\add.jpg">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="C:\Users\jamesion\Pictures\符号\add.bmp">
-      <Filter>资源文件</Filter>
-    </Image>
   </ItemGroup>
 </Project>

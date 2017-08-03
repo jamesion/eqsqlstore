@@ -82,15 +82,15 @@ void EQEmuLogSys::LoadLogSettingsDefaults()
 	memset(log_settings, 0, sizeof(LogSettings) * Logs::LogCategory::MaxCategoryID);
 
 	/* Set Defaults */
-	log_settings[Logs::MysqlErro].log_to_console = Logs::Error;
-	log_settings[Logs::Normal].log_to_console = Logs::Error;
-	log_settings[Logs::Setting].log_to_console = Logs::Error;
-	log_settings[Logs::Files].log_to_console = Logs::Error;
+	log_settings[Logs::MysqlErro].log_to_console = Logs::General;
+	log_settings[Logs::Normal].log_to_console = Logs::General;
+	log_settings[Logs::Setting].log_to_console = Logs::General;
+	log_settings[Logs::Files].log_to_console = Logs::General;
 
-	log_settings[Logs::MysqlErro].log_to_file = Logs::Error;
-	log_settings[Logs::Normal].log_to_file = Logs::General;
-	log_settings[Logs::Setting].log_to_file = Logs::General;
-	log_settings[Logs::Files].log_to_file = Logs::Error;
+	log_settings[Logs::MysqlErro].log_to_file = Logs::Wranging;
+	log_settings[Logs::Normal].log_to_file = Logs::Error;
+	log_settings[Logs::Setting].log_to_file = Logs::Error;
+	log_settings[Logs::Files].log_to_file = Logs::Wranging;
 
 
 	log_settings[Logs::MysqlErro].is_category_enabled = 1;
@@ -105,9 +105,15 @@ void EQEmuLogSys::LoadLogSettingsDefaults()
 
 }
 
-std::string EQEmuLogSys::FormatOutMessageString(uint16 log_category, const std::string &in_message)
+std::string EQEmuLogSys::FormatOutMessageString(uint16 debug_level, uint16 log_category, const std::string &in_message)
 {
 	std::string ret;
+
+	ret.push_back('[');
+	ret.append(Logs::DebugLevelName[debug_level]);
+	ret.push_back(']');
+	ret.push_back(' ');
+
 	ret.push_back('[');
 	ret.append(Logs::LogCategoryName[log_category]);
 	ret.push_back(']');
@@ -131,7 +137,7 @@ void EQEmuLogSys::ProcessGMSay(uint16 debug_level, uint16 log_category, const st
 
 void EQEmuLogSys::ProcessLogWrite(uint16 debug_level, uint16 log_category, const std::string &message)
 {
-	if (log_category == Logs::MysqlErro) {
+	if (log_category == Logs::MysqlErro|| log_category == Logs::Files||Logs::Setting) {
 		char time_stamp[80];
 		EQEmuLogSys::SetCurrentTimeStamp(time_stamp);
 		std::ofstream log;
@@ -258,7 +264,7 @@ void EQEmuLogSys::Out(Logs::DebugLevel debug_level, uint16 log_category, std::st
 	std::string output_message = vStringFormat(message.c_str(), args);
 	va_end(args);
 
-	std::string output_debug_message = EQEmuLogSys::FormatOutMessageString(log_category, output_message);
+	std::string output_debug_message = EQEmuLogSys::FormatOutMessageString(debug_level,log_category, output_message);
 
 	if (log_to_dalog) EQEmuLogSys::ProcessConsoleMessage(debug_level, log_category, output_debug_message);
 	//if (log_to_gmsay) EQEmuLogSys::ProcessGMSay(debug_level, log_category, output_debug_message);

@@ -55,7 +55,7 @@ protected:
 public:
 
 	//设置规则表只读标记true为只读，false解锁只读
-	void Setreadonly(bool read) { readonly = read; upcell(); };
+	void Setreadonly(bool read) { readonly = read; Refresh(); };
 
 	//读取规则表只读标记
 	bool Getgridreadonliy() {return readonly;};
@@ -64,16 +64,23 @@ public:
 	void SetCellCombo(int nRow, int nCol);
 
 	//存储规则表为磁盘文件
-	void RuleSave(hostinfo deshost, hostinfo schost);
+	void RuleSave(hostinfo deshost, hostinfo schost, BOOL default=FALSE);
 
 	//获取规则表一组规则,并返回下组规则主表行数,无规则返回0
 	int ReadRuleGroup(int nRow, std::string* outrulemessage);
+	int ReadRule(std::string* outrulemessage);
 
 	//较验规则完整性
 	bool CheckRule();
 
-	std::fstream rulefs;
+	//打开规则文件
+	bool RuleOpen(hostinfo* deshost, hostinfo* schost, bool default = false);
+
+
 private:
 	std::string CellText;
+
+	//将文件读入规则表
+	void filetogrid(std::string filetext);
 
 };
